@@ -1,7 +1,6 @@
 from trans import EulerToR_mat, R_matToEuler, RT
-from match import ICP
-from draw import Draw3D
 from o3d_match import o3d_ICP
+from match import ICP
 from plyfile import PlyData
 import numpy as np
 
@@ -25,12 +24,16 @@ init_T_mat = np.array([init_translation]).T
 init_trans = np.vstack(
     (np.hstack((init_R_mat, init_T_mat)), np.array([[0, 0, 0, 1]])))
 
-print('open3d ICP结果： \n')
-o3d_ICP(P, RT_P, init_trans)
 
-print('ICP结果： \n')
-R, translations = ICP(P, RT_P, init_euler,init_translation)
-angles = R_matToEuler(R)
-print(angles, translations)
+print('open3d ICP working:')
+o3d_transform=o3d_ICP(P, RT_P, init_trans)
 
-# Draw3D([P,RT_P])
+
+print('my ICP working:')
+my_transform = ICP(P, RT_P, init_trans)
+
+print('精度评定：')
+print('旋转 平移参数真值：',init_euler,init_translation)
+print('o3d ICP 输出参数：',R_matToEuler(o3d_transform[:3,:3]), o3d_transform[:3,3])
+print('my ICP 输出参数：',R_matToEuler(my_transform[:3,:3]), my_transform[:3,3])
+

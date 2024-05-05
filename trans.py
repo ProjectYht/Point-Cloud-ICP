@@ -10,6 +10,7 @@ import numpy as np
 # Euler = R_matToEuler(R_mat)
 # print('欧拉角：\n', Euler, '\n')
 
+
 def EulerToR_mat(angles):
     # 角度转换为弧度
     radians = np.radians(angles)
@@ -28,12 +29,14 @@ def EulerToR_mat(angles):
     R = np.dot(Rz, np.dot(Ry, Rx))
     return R
 
+
 def isR_mat(R):
     Rt = np.transpose(R)
     shouldBeIdentity = np.dot(Rt, R)
     I = np.identity(3, dtype=R.dtype)
     n = np.linalg.norm(I - shouldBeIdentity)
     return n < 1e-6
+
 
 def R_matToEuler(R):
     assert (isR_mat(R))
@@ -52,7 +55,6 @@ def R_matToEuler(R):
     return angles
 
 
-
 # 旋转平移变换
 def RT(points, angles, translations):
 
@@ -60,3 +62,13 @@ def RT(points, angles, translations):
     R_P = np.dot(R, points.T)
     RT_P = R_P + np.array(translations).reshape(3, 1)
     return RT_P.T
+
+# 使用齐次旋转平移矩阵变换
+
+
+def Transform(points, transform):
+    homo_points = np.hstack((points, np.ones((len(points), 1))))
+    temp_points = np.dot(transform, homo_points.T)
+    new_points = temp_points[:3, :].T
+
+    return new_points

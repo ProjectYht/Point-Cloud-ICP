@@ -1,10 +1,10 @@
 # 简单实现ICP
 from sklearn.neighbors import KDTree
-from trans import RT
+from trans import Transform
 import numpy as np
 
 
-def ICP(source, target, ini_angles, ini_trans, max_iters=20, tolerance=1e-4):
+def ICP(source, target, init_trans, max_iters=80, tolerance=1e-6):
     """
     参数：
     source: 源点云，每行一个点的坐标。
@@ -15,17 +15,22 @@ def ICP(source, target, ini_angles, ini_trans, max_iters=20, tolerance=1e-4):
     返回值：
     align_source: 对齐后的源点云。
     """
+    print('初始变换矩阵：\n', init_trans)
     # 构建 KD 树
     tree = KDTree(target)
 
     # 利用初始参数得到匹配点云
-    align_source = RT(source, ini_angles, ini_trans)
+    align_source = Transform(source, init_trans)
+
+    oput_trans = init_trans  # 在初始参数基础上累积的齐次矩阵
+
+    new_trans = np.eye(4)  # 每次迭代新增齐次矩阵
 
     prev_error = np.inf
     for iteration in range(max_iters):
 
         distances, indices = tree.query(align_source)
-        new_target=target[indices].reshape((len(target),3))
+        new_target = target[indices].reshape((len(target), 3))
 
         # 计算源点云和目标点云之间的误差
         error = np.mean(distances)
@@ -46,9 +51,14 @@ def ICP(source, target, ini_angles, ini_trans, max_iters=20, tolerance=1e-4):
         u, _, vt = np.linalg.svd(covariance)
         new_R = np.dot(vt.T, u.T)
         new_T = target_center.T - np.dot(new_R, source_center.T)
+        new_trans[:3, :3] = new_R
+        new_trans[:3, 3] = new_T
 
-        # 更新对齐点云，误差
+        # 更新 匹配点云，误差，齐次矩阵
         align_source = np.dot(align_source, new_R.T) + new_T.T
         prev_error = error
+        oput_trans = np.dot(new_trans, oput_trans)
 
-    return new_R, new_T
+    
+    print("输出变换矩阵：\n", oput_trans)
+    return oput_trans
